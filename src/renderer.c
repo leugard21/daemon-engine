@@ -20,6 +20,14 @@ bool renderer_init(void) {
   return true;
 }
 
+void renderer_set_viewport(int w, int h) {
+  if (w < 1)
+    w = 1;
+  if (h < 1)
+    h = 1;
+  glViewport(0, 0, w, h);
+}
+
 void renderer_begin_frame(void) {
   glClearColor(0.05f, 0.05f, 0.08f, 1.0f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

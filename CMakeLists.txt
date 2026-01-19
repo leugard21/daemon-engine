@@ -15,6 +15,8 @@ include_directories(
 add_executable(daemon
   src/main.c
   src/renderer.c 
+  src/time.c 
+  src/input.c
   external/glad/src/glad.c
 )
 
