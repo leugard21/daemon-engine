@@ -17,6 +17,7 @@ add_executable(daemon
   src/renderer.c 
   src/time.c 
   src/input.c
+  src/camera.c
   external/glad/src/glad.c
 )
 

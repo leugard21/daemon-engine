@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 
+#include "camera.h"
 #include "input.h"
 #include "renderer.h"
 #include "time.h"
@@ -64,6 +65,9 @@ int main(int argc, char **argv) {
     return 1;
   }
 
+  Camera cam;
+  camera_init(&cam);
+
   InputState in;
   input_init(&in, start_w, start_h);
   renderer_set_viewport(start_w, start_h);
@@ -94,6 +98,10 @@ int main(int argc, char **argv) {
 
     if (in.resized)
       renderer_set_viewport(in.window_w, in.window_h);
+
+    float aspect = (float)in.window_w / (float)in.window_h;
+    Mat4 vp = camera_view_proj(&cam, aspect);
+    (void)vp;
 
     acc += frame_dt;
     while (acc >= fixed_dt) {
