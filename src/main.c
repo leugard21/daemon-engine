@@ -2,6 +2,8 @@
 #include <stdbool.h>
 #include <stdio.h>
 
+#include "renderer.h"
+
 static void log_sdl_error(const char *msg) {
   fprintf(stderr, "%s: %s\n", msg, SDL_GetError());
 }
@@ -20,7 +22,6 @@ int main(int argc, char **argv) {
   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
   SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
   SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
-  SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
 
   SDL_Window *window = SDL_CreateWindow(
       "Daemon Engine", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280,
@@ -40,7 +41,12 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  SDL_GL_SetSwapInterval(1);
+  if (!renderer_init()) {
+    SDL_GL_DeleteContext(gl);
+    SDL_DestroyWindow(window);
+    SDL_Quit();
+    return 1;
+  }
 
   bool running = true;
   while (running) {
@@ -51,9 +57,12 @@ int main(int argc, char **argv) {
       if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_ESCAPE)
         running = false;
     }
+
+    renderer_begin_frame();
     SDL_GL_SwapWindow(window);
   }
 
+  renderer_shutdown();
   SDL_GL_DeleteContext(gl);
   SDL_DestroyWindow(window);
   SDL_Quit();
