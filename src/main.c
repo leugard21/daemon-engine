@@ -7,12 +7,12 @@
 #include "renderer.h"
 #include "time.h"
 
-static Camera g_cam;
-static Mat4 g_vp;
-
 static void log_sdl_error(const char *msg) {
   fprintf(stderr, "%s: %s\n", msg, SDL_GetError());
 }
+
+static Camera g_cam;
+static Mat4 g_vp;
 
 static void game_update(double fixed_dt, const InputState *in) {
   (void)fixed_dt;
@@ -29,7 +29,7 @@ int main(int argc, char **argv) {
   (void)argc;
   (void)argv;
 
-  if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) != 0) {
+  if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_TIMER) != 0) {
     log_sdl_error("SDL_Init failed");
     return 1;
   }
@@ -42,10 +42,12 @@ int main(int argc, char **argv) {
   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
   SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
   SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+  SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
 
   SDL_Window *window = SDL_CreateWindow(
       "Daemon Engine", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, start_w,
       start_h, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
+
   if (!window) {
     log_sdl_error("SDL_CreateWindow failed");
     SDL_Quit();
@@ -60,6 +62,7 @@ int main(int argc, char **argv) {
     return 1;
   }
 
+  SDL_GL_MakeCurrent(window, gl);
   SDL_GL_SetSwapInterval(1);
 
   if (!renderer_init()) {
@@ -73,6 +76,7 @@ int main(int argc, char **argv) {
 
   InputState in;
   input_init(&in, start_w, start_h);
+
   renderer_set_viewport(start_w, start_h);
 
   time_init();
@@ -85,13 +89,17 @@ int main(int argc, char **argv) {
 
   bool running = true;
   while (running) {
+    input_begin_frame(&in);
+
     SDL_Event e;
     while (SDL_PollEvent(&e)) {
       input_process_event(&in, &e);
     }
 
-    if (in.quit_requested || in.key_pressed[SDL_SCANCODE_ESCAPE])
+    if (in.quit_requested || in.key_pressed[SDL_SCANCODE_ESCAPE]) {
       running = false;
+      continue;
+    }
 
     double now = time_now_seconds();
     double frame_dt = now - prev;
@@ -99,8 +107,7 @@ int main(int argc, char **argv) {
     if (frame_dt > max_frame_dt)
       frame_dt = max_frame_dt;
 
-    if (in.resized)
-      renderer_set_viewport(in.window_w, in.window_h);
+    renderer_set_viewport(in.window_w, in.window_h);
 
     float aspect = (float)in.window_w / (float)in.window_h;
     g_vp = camera_view_proj(&g_cam, aspect);

@@ -6,3 +6,4 @@ build/
 *.ilk
 *.dSYM/
 .DS_Store
+.cache/

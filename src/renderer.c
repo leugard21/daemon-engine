@@ -3,8 +3,11 @@
 
 #include <SDL2/SDL.h>
 #include <glad/glad.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
+
+#define RENDERER_DEBUG_CLIPSPACE 1
 
 typedef struct RendererState {
   ShaderProgram prog;
@@ -16,6 +19,26 @@ typedef struct RendererState {
 
 static RendererState g;
 
+static void gl_check(const char *where) {
+  GLenum err = glGetError();
+  if (err != GL_NO_ERROR) {
+    printf("GL error at %s: 0x%x\n", where, (unsigned)err);
+  }
+}
+
+#if RENDERER_DEBUG_CLIPSPACE
+static const char *k_vs = "#version 330 core\n"
+                          "layout(location=0) in vec3 a_pos;\n"
+                          "void main(){\n"
+                          "  gl_Position = vec4(a_pos, 1.0);\n"
+                          "}\n";
+
+static const char *k_fs = "#version 330 core\n"
+                          "out vec4 o_color;\n"
+                          "void main(){\n"
+                          "  o_color = vec4(1.0, 0.0, 0.0, 1.0);\n"
+                          "}\n";
+#else
 static const char *k_vs =
     "#version 330 core\n"
     "layout(location=0) in vec3 a_pos;\n"
@@ -30,6 +53,7 @@ static const char *k_fs = "#version 330 core\n"
                           "void main(){\n"
                           "  o_color = vec4(0.9, 0.2, 0.3, 1.0);\n"
                           "}\n";
+#endif
 
 bool renderer_init(void) {
   memset(&g, 0, sizeof(g));
@@ -43,6 +67,7 @@ bool renderer_init(void) {
   printf("OpenGL Renderer: %s\n", glGetString(GL_RENDERER));
   printf("OpenGL Version : %s\n", glGetString(GL_VERSION));
 
+  glDisable(GL_CULL_FACE);
   glEnable(GL_DEPTH_TEST);
   glDepthFunc(GL_LESS);
 
@@ -52,9 +77,15 @@ bool renderer_init(void) {
   g.u_viewProj = glGetUniformLocation(g.prog.program, "u_viewProj");
   g.u_model = glGetUniformLocation(g.prog.program, "u_model");
 
+#if RENDERER_DEBUG_CLIPSPACE
+  float verts[] = {
+      0.0f, 0.8f, 0.0f, -0.8f, -0.8f, 0.0f, 0.8f, -0.8f, 0.0f,
+  };
+#else
   float verts[] = {
       0.0f, 0.5f, 0.0f, -0.5f, -0.5f, 0.0f, 0.5f, -0.5f, 0.0f,
   };
+#endif
 
   glGenVertexArrays(1, &g.vao);
   glGenBuffers(1, &g.vbo);
@@ -65,11 +96,13 @@ bool renderer_init(void) {
                GL_STATIC_DRAW);
 
   glEnableVertexAttribArray(0);
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void *)0);
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * (GLsizei)sizeof(float),
+                        (void *)0);
 
   glBindBuffer(GL_ARRAY_BUFFER, 0);
   glBindVertexArray(0);
 
+  gl_check("renderer_init");
   return true;
 }
 
@@ -87,17 +120,27 @@ void renderer_begin_frame(void) {
 }
 
 void renderer_draw_test_triangle(const Mat4 *view_proj) {
-  Mat4 model = m4_identity();
-
   glUseProgram(g.prog.program);
-  glUniformMatrix4fv(g.u_viewProj, 1, GL_FALSE, view_proj->m);
-  glUniformMatrix4fv(g.u_model, 1, GL_FALSE, model.m);
+
+#if RENDERER_DEBUG_CLIPSPACE
+  (void)view_proj;
+  glDisable(GL_DEPTH_TEST);
+#else
+  Mat4 model = m4_identity();
+  glEnable(GL_DEPTH_TEST);
+
+  if (g.u_viewProj >= 0)
+    glUniformMatrix4fv(g.u_viewProj, 1, GL_FALSE, view_proj->m);
+  if (g.u_model >= 0)
+    glUniformMatrix4fv(g.u_model, 1, GL_FALSE, model.m);
+#endif
 
   glBindVertexArray(g.vao);
   glDrawArrays(GL_TRIANGLES, 0, 3);
   glBindVertexArray(0);
 
   glUseProgram(0);
+  gl_check("renderer_draw_test_triangle");
 }
 
 void renderer_shutdown(void) {
