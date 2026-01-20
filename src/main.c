@@ -7,6 +7,9 @@
 #include "renderer.h"
 #include "time.h"
 
+static Camera g_cam;
+static Mat4 g_vp;
+
 static void log_sdl_error(const char *msg) {
   fprintf(stderr, "%s: %s\n", msg, SDL_GetError());
 }
@@ -19,6 +22,7 @@ static void game_update(double fixed_dt, const InputState *in) {
 static void game_render(double frame_dt) {
   (void)frame_dt;
   renderer_begin_frame();
+  renderer_draw_test_triangle(&g_vp);
 }
 
 int main(int argc, char **argv) {
@@ -65,8 +69,7 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  Camera cam;
-  camera_init(&cam);
+  camera_init(&g_cam);
 
   InputState in;
   input_init(&in, start_w, start_h);
@@ -100,8 +103,7 @@ int main(int argc, char **argv) {
       renderer_set_viewport(in.window_w, in.window_h);
 
     float aspect = (float)in.window_w / (float)in.window_h;
-    Mat4 vp = camera_view_proj(&cam, aspect);
-    (void)vp;
+    g_vp = camera_view_proj(&g_cam, aspect);
 
     acc += frame_dt;
     while (acc >= fixed_dt) {
