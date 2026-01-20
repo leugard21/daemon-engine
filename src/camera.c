@@ -3,9 +3,8 @@
 #include <math.h>
 
 void camera_init(Camera *c) {
-  c->pos = v3(0.0f, 0.0f, 2.0f);
+  c->pos = v3(0.0f, 1.6f, 2.0f);
   c->yaw = 0.0f;
-  c->pitch = 0.0f;
   c->fov_y = (float)(60.0 * (M_PI / 180.0));
   c->znear = 0.05f;
   c->zfar = 2000.0f;
@@ -14,14 +13,16 @@ void camera_init(Camera *c) {
 Mat4 camera_view(Camera *c) {
   float cy = cosf(c->yaw);
   float sy = sinf(c->yaw);
-  float cp = cosf(c->pitch);
-  float sp = sinf(c->pitch);
 
-  Vec3 forward = v3(cy * cp, sp, sy * cp);
-  Vec3 center = v3_add(c->pos, forward);
+  Vec3 forward = v3(0.0f, 0.0f, -1.0f);
+  forward = v3(forward.x * cy + forward.z * sy, 0.0f,
+               -forward.x * sy + forward.z * cy);
+  forward = v3_norm(forward);
+
   Vec3 up = v3(0.0f, 1.0f, 0.0f);
+  Vec3 right = v3_norm(v3_cross(forward, up));
 
-  return m4_lookat(c->pos, center, up);
+  return m4_from_basis(right, up, forward, c->pos);
 }
 
 Mat4 camera_proj(Camera *c, float aspect) {

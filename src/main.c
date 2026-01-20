@@ -17,6 +17,11 @@ static Mat4 g_vp;
 static void game_update(double fixed_dt, const InputState *in) {
   (void)fixed_dt;
   (void)in;
+
+  if (in->key_down[SDL_SCANCODE_LEFT])
+    g_cam.yaw += (float)(fixed_dt * 1.5);
+  if (in->key_down[SDL_SCANCODE_RIGHT])
+    g_cam.yaw -= (float)(fixed_dt * 1.5);
 }
 
 static void game_render(double frame_dt) {
@@ -73,6 +78,8 @@ int main(int argc, char **argv) {
   }
 
   camera_init(&g_cam);
+  g_cam.pos = v3(0.0f, 0.0f, 2.0f);
+  g_cam.yaw = 0.0f;
 
   InputState in;
   input_init(&in, start_w, start_h);

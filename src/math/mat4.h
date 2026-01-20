@@ -96,4 +96,24 @@ static inline Mat4 m4_lookat(Vec3 eye, Vec3 center, Vec3 up) {
   return r;
 }
 
+static inline Mat4 m4_from_basis(Vec3 right, Vec3 up, Vec3 forward, Vec3 pos) {
+  Mat4 r = m4_identity();
+
+  r.m[0] = right.x;
+  r.m[4] = right.y;
+  r.m[8] = right.z;
+  r.m[1] = up.x;
+  r.m[5] = up.y;
+  r.m[9] = up.z;
+  r.m[2] = -forward.x;
+  r.m[6] = -forward.y;
+  r.m[10] = -forward.z;
+
+  r.m[12] = -v3_dot(right, pos);
+  r.m[13] = -v3_dot(up, pos);
+  r.m[14] = v3_dot(forward, pos);
+
+  return r;
+}
+
 #endif // !MAT4_H

@@ -7,7 +7,6 @@
 typedef struct Camera {
   Vec3 pos;
   float yaw;
-  float pitch;
   float fov_y;
   float znear;
   float zfar;

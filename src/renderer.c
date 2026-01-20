@@ -1,3 +1,5 @@
+#define RENDERER_DEBUG_CLIPSPACE 0
+
 #include "renderer.h"
 #include "gfx/shader.h"
 
@@ -6,8 +8,6 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
-
-#define RENDERER_DEBUG_CLIPSPACE 1
 
 typedef struct RendererState {
   ShaderProgram prog;
