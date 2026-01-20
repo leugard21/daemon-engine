@@ -19,6 +19,7 @@ add_executable(daemon
   src/input.c
   src/camera.c
   src/gfx/shader.c
+  src/map/map.c
   external/glad/src/glad.c
 )
 

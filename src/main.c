@@ -4,6 +4,7 @@
 
 #include "camera.h"
 #include "input.h"
+#include "map/map.h"
 #include "renderer.h"
 #include "time.h"
 
@@ -105,6 +106,13 @@ int main(int argc, char **argv) {
   g_cam.pos = v3(0.0f, 2.0f, 5.0f);
   g_cam.yaw = 0.0f;
 
+  Map map;
+  if (!map_build_test(&map)) {
+    printf("Failed to build test map\n");
+    return 1;
+  }
+  map_debug_print(&map);
+
   InputState in;
   input_init(&in, start_w, start_h);
 
@@ -154,6 +162,7 @@ int main(int argc, char **argv) {
   }
 
   renderer_shutdown();
+  map_destroy(&map);
   SDL_GL_DeleteContext(gl);
   SDL_DestroyWindow(window);
   SDL_Quit();
