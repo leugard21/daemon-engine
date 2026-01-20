@@ -61,6 +61,18 @@ static inline Mat4 m4_rotate_x(float rad) {
   return r;
 }
 
+static inline Mat4 m4_rotate_z(float rad) {
+  Mat4 r = m4_identity();
+  float c = cosf(rad);
+  float s = sinf(rad);
+  r.m[0] = c;
+  r.m[4] = -s;
+  r.m[1] = s;
+  r.m[5] = c;
+
+  return r;
+}
+
 static inline Mat4 m4_perspective(float fovy_rad, float aspect, float znear,
                                   float zfar) {
   Mat4 r;
@@ -112,6 +124,15 @@ static inline Mat4 m4_from_basis(Vec3 right, Vec3 up, Vec3 forward, Vec3 pos) {
   r.m[12] = -v3_dot(right, pos);
   r.m[13] = -v3_dot(up, pos);
   r.m[14] = v3_dot(forward, pos);
+
+  return r;
+}
+
+static inline Mat4 m4_scale(Vec3 s) {
+  Mat4 r = m4_identity();
+  r.m[0] = s.x;
+  r.m[5] = s.y;
+  r.m[10] = s.z;
 
   return r;
 }

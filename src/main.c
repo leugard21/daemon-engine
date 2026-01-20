@@ -14,20 +14,44 @@ static void log_sdl_error(const char *msg) {
 static Camera g_cam;
 static Mat4 g_vp;
 
+static Vec3 yaw_forward(float yaw) {
+  float cy = cosf(yaw);
+  float sy = sinf(yaw);
+  return v3(sy, 0.0f, -cy);
+}
+
+static Vec3 yaw_right(float yaw) {
+  float cy = cosf(yaw);
+  float sy = sinf(yaw);
+  return v3(cy, 0.0f, sy);
+}
+
 static void game_update(double fixed_dt, const InputState *in) {
-  (void)fixed_dt;
-  (void)in;
+  float dt = (float)fixed_dt;
 
   if (in->key_down[SDL_SCANCODE_LEFT])
-    g_cam.yaw += (float)(fixed_dt * 1.5);
+    g_cam.yaw += dt * 1.5f;
   if (in->key_down[SDL_SCANCODE_RIGHT])
-    g_cam.yaw -= (float)(fixed_dt * 1.5);
+    g_cam.yaw -= dt * 1.5f;
+
+  Vec3 f = yaw_forward(g_cam.yaw);
+  Vec3 r = yaw_right(g_cam.yaw);
+
+  float speed = 3.0f;
+  if (in->key_down[SDL_SCANCODE_W])
+    g_cam.pos = v3_add(g_cam.pos, v3_mul(f, speed * dt));
+  if (in->key_down[SDL_SCANCODE_S])
+    g_cam.pos = v3_sub(g_cam.pos, v3_mul(f, speed * dt));
+  if (in->key_down[SDL_SCANCODE_A])
+    g_cam.pos = v3_sub(g_cam.pos, v3_mul(r, speed * dt));
+  if (in->key_down[SDL_SCANCODE_D])
+    g_cam.pos = v3_add(g_cam.pos, v3_mul(r, speed * dt));
 }
 
 static void game_render(double frame_dt) {
   (void)frame_dt;
   renderer_begin_frame();
-  renderer_draw_test_triangle(&g_vp);
+  renderer_draw_test_world(&g_vp);
 }
 
 int main(int argc, char **argv) {
@@ -78,7 +102,7 @@ int main(int argc, char **argv) {
   }
 
   camera_init(&g_cam);
-  g_cam.pos = v3(0.0f, 0.0f, 2.0f);
+  g_cam.pos = v3(0.0f, 2.0f, 5.0f);
   g_cam.yaw = 0.0f;
 
   InputState in;
