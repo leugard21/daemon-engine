@@ -6,9 +6,15 @@
 
 #include "../math/vec2.h"
 
+typedef struct SectorLoop {
+  int *indices;
+  int count;
+} SectorLoop;
+
 typedef struct Sector {
   float floor_h;
   float ceil_h;
+  SectorLoop loop;
 } Sector;
 
 typedef struct Linedef {

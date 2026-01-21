@@ -10,6 +10,12 @@ void map_destroy(Map *m) {
   if (!m)
     return;
 
+  for (int i = 0; i < m->sector_count; i++) {
+    free(m->sectors[i].loop.indices);
+    m->sectors[i].loop.indices = NULL;
+    m->sectors[i].loop.count = 0;
+  }
+
   free(m->verts);
   free(m->lines);
   free(m->sectors);
@@ -54,10 +60,29 @@ bool map_build_test(Map *out) {
   out->sectors[1].floor_h = 0.5f;
   out->sectors[1].ceil_h = 3.0f;
 
+  out->sectors[0].loop.count = 4;
+  out->sectors[0].loop.indices = (int *)calloc(4, sizeof(int));
+  out->sectors[0].loop.indices[0] = 0;
+  out->sectors[0].loop.indices[1] = 1;
+  out->sectors[0].loop.indices[2] = 2;
+  out->sectors[0].loop.indices[3] = 3;
+
+  out->sectors[1].loop.count = 4;
+  out->sectors[1].loop.indices = (int *)calloc(4, sizeof(int));
+  out->sectors[1].loop.indices[0] = 1;
+  out->sectors[1].loop.indices[1] = 4;
+  out->sectors[1].loop.indices[2] = 5;
+  out->sectors[1].loop.indices[3] = 2;
+
+  if (!out->sectors[0].loop.indices || !out->sectors[1].loop.indices) {
+    map_destroy(out);
+    return false;
+  }
+
   out->lines[0] =
       (Linedef){.v0 = 0, .v1 = 1, .front_sector = 0, .back_sector = -1};
-  out->lines[1] = (Linedef){
-      .v0 = 1, .v1 = 2, .front_sector = 0, .back_sector = 1}; // portal
+  out->lines[1] =
+      (Linedef){.v0 = 1, .v1 = 2, .front_sector = 0, .back_sector = 1};
   out->lines[2] =
       (Linedef){.v0 = 2, .v1 = 3, .front_sector = 0, .back_sector = -1};
   out->lines[3] =

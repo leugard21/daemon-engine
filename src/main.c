@@ -103,7 +103,7 @@ int main(int argc, char **argv) {
   }
 
   camera_init(&g_cam);
-  g_cam.pos = v3(0.0f, 2.0f, 5.0f);
+  g_cam.pos = v3(2.0f, 1.0f, 10.0f);
   g_cam.yaw = 0.0f;
 
   Map map;
@@ -112,6 +112,12 @@ int main(int argc, char **argv) {
     return 1;
   }
   map_debug_print(&map);
+
+  if (!renderer_build_sector_mesh(&map)) {
+    printf("Failed to build sector mesh\n");
+    map_destroy(&map);
+    return 1;
+  }
 
   InputState in;
   input_init(&in, start_w, start_h);
@@ -156,6 +162,9 @@ int main(int argc, char **argv) {
       game_update(fixed_dt, &in);
       acc -= fixed_dt;
     }
+
+    renderer_begin_frame();
+    renderer_draw_world(&g_vp);
 
     game_render(frame_dt);
     SDL_GL_SwapWindow(window);

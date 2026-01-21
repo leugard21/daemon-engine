@@ -1,5 +1,7 @@
 #include "renderer.h"
+#include "geom/sector_mesh.h"
 #include "gfx/shader.h"
+#include "map/map.h"
 
 #include <SDL2/SDL.h>
 #include <glad/glad.h>
@@ -13,6 +15,7 @@ typedef struct RendererState {
   GLuint vbo;
   GLint u_viewProj;
   GLint u_model;
+  SectorMesh sector_mesh;
 } RendererState;
 
 static RendererState g;
@@ -116,11 +119,31 @@ void renderer_draw_test_world(const Mat4 *view_proj) {
   glUseProgram(0);
 }
 
+bool renderer_build_sector_mesh(const Map *map) {
+  sector_mesh_destroy(&g.sector_mesh);
+  return sector_mesh_build(&g.sector_mesh, map);
+}
+
+void renderer_draw_world(const Mat4 *view_proj) {
+  glUseProgram(g.prog.program);
+  if (g.u_viewProj >= 0)
+    glUniformMatrix4fv(g.u_viewProj, 1, GL_FALSE, view_proj->m);
+  if (g.u_model >= 0)
+    glUniformMatrix4fv(g.u_model, 1, GL_FALSE, m4_identity().m);
+
+  glBindVertexArray(g.sector_mesh.vao);
+  glDrawArrays(GL_TRIANGLES, 0, g.sector_mesh.vertex_count);
+  glBindVertexArray(0);
+
+  glUseProgram(0);
+}
+
 void renderer_shutdown(void) {
   if (g.vbo)
     glDeleteBuffers(1, &g.vbo);
   if (g.vao)
     glDeleteVertexArrays(1, &g.vao);
   shader_destroy(&g.prog);
+  sector_mesh_destroy(&g.sector_mesh);
   memset(&g, 0, sizeof(g));
 }
