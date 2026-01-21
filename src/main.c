@@ -52,7 +52,7 @@ static void game_update(double fixed_dt, const InputState *in) {
 static void game_render(double frame_dt) {
   (void)frame_dt;
   renderer_begin_frame();
-  renderer_draw_test_world(&g_vp);
+  renderer_draw_world(&g_vp);
 }
 
 int main(int argc, char **argv) {
@@ -113,8 +113,8 @@ int main(int argc, char **argv) {
   }
   map_debug_print(&map);
 
-  if (!renderer_build_sector_mesh(&map)) {
-    printf("Failed to build sector mesh\n");
+  if (!renderer_build_world_meshes(&map)) {
+    printf("Failed to build world mesh\n");
     map_destroy(&map);
     return 1;
   }

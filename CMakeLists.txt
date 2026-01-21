@@ -21,6 +21,7 @@ add_executable(daemon
   src/gfx/shader.c
   src/map/map.c
   src/geom/sector_mesh.c
+  src/geom/wall_mesh.c
   external/glad/src/glad.c
 )
 

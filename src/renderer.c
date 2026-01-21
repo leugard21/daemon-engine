@@ -1,5 +1,6 @@
 #include "renderer.h"
 #include "geom/sector_mesh.h"
+#include "geom/wall_mesh.h"
 #include "gfx/shader.h"
 #include "map/map.h"
 
@@ -16,6 +17,7 @@ typedef struct RendererState {
   GLint u_viewProj;
   GLint u_model;
   SectorMesh sector_mesh;
+  WallMesh wall_mesh;
 } RendererState;
 
 static RendererState g;
@@ -103,25 +105,20 @@ void renderer_begin_frame(void) {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
-void renderer_draw_test_world(const Mat4 *view_proj) {
-  Mat4 model = m4_identity();
-
-  glUseProgram(g.prog.program);
-  if (g.u_viewProj >= 0)
-    glUniformMatrix4fv(g.u_viewProj, 1, GL_FALSE, view_proj->m);
-  if (g.u_model >= 0)
-    glUniformMatrix4fv(g.u_model, 1, GL_FALSE, model.m);
-
-  glBindVertexArray(g.vao);
-  glDrawArrays(GL_TRIANGLES, 0, 6);
-  glBindVertexArray(0);
-
-  glUseProgram(0);
-}
-
 bool renderer_build_sector_mesh(const Map *map) {
   sector_mesh_destroy(&g.sector_mesh);
   return sector_mesh_build(&g.sector_mesh, map);
+}
+
+bool renderer_build_world_meshes(const Map *map) {
+  sector_mesh_destroy(&g.sector_mesh);
+  wall_mesh_destroy(&g.wall_mesh);
+
+  if (!sector_mesh_build(&g.sector_mesh, map))
+    return false;
+  if (!wall_mesh_build(&g.wall_mesh, map))
+    return false;
+  return true;
 }
 
 void renderer_draw_world(const Mat4 *view_proj) {
@@ -133,8 +130,11 @@ void renderer_draw_world(const Mat4 *view_proj) {
 
   glBindVertexArray(g.sector_mesh.vao);
   glDrawArrays(GL_TRIANGLES, 0, g.sector_mesh.vertex_count);
-  glBindVertexArray(0);
 
+  glBindVertexArray(g.wall_mesh.vao);
+  glDrawArrays(GL_TRIANGLES, 0, g.wall_mesh.vertex_count);
+
+  glBindVertexArray(0);
   glUseProgram(0);
 }
 
@@ -145,5 +145,6 @@ void renderer_shutdown(void) {
     glDeleteVertexArrays(1, &g.vao);
   shader_destroy(&g.prog);
   sector_mesh_destroy(&g.sector_mesh);
+  wall_mesh_destroy(&g.wall_mesh);
   memset(&g, 0, sizeof(g));
 }
