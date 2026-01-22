@@ -14,6 +14,7 @@ typedef struct SectorLoop {
 typedef struct Sector {
   float floor_h;
   float ceil_h;
+  float light_level;
   SectorLoop loop;
 } Sector;
 

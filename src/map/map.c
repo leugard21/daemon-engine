@@ -56,9 +56,11 @@ bool map_build_test(Map *out) {
 
   out->sectors[0].floor_h = 0.0f;
   out->sectors[0].ceil_h = 3.0f;
+  out->sectors[0].light_level = 1.0f;
 
   out->sectors[1].floor_h = 0.5f;
   out->sectors[1].ceil_h = 3.0f;
+  out->sectors[1].light_level = 0.6f;
 
   out->sectors[0].loop.count = 4;
   out->sectors[0].loop.indices = (int *)calloc(4, sizeof(int));
@@ -110,8 +112,9 @@ void map_debug_print(const Map *m) {
 
   printf("  sectors: %d\n", m->sector_count);
   for (int i = 0; i < m->sector_count; i++) {
-    printf("    s%d floor=%.2f ceil=%.2f\n", i, m->sectors[i].floor_h,
-           m->sectors[i].ceil_h);
+    printf("    s%d floor=%.2f ceil=%.2f light=%.2f\n", i,
+           m->sectors[i].floor_h, m->sectors[i].ceil_h,
+           m->sectors[i].light_level);
   }
 
   printf("  lines: %d\n", m->line_count);

@@ -6,6 +6,8 @@
 typedef struct Vtx {
   float px, py, pz;
   float cr, cg, cb;
+  float u, v;
+  float light;
 } Vtx;
 
 static void push_tri(Vtx *dst, int *at, Vtx a, Vtx b, Vtx c) {
@@ -50,13 +52,19 @@ bool sector_mesh_build(SectorMesh *out, const Map *map) {
       Vec2 p1_2 = map->verts[i1];
       Vec2 p2_2 = map->verts[i2];
 
-      Vtx f0 = {p0_2.x, sec->floor_h, p0_2.y, 0.2f, 0.8f, 0.2f};
-      Vtx f1 = {p1_2.x, sec->floor_h, p1_2.y, 0.2f, 0.8f, 0.2f};
-      Vtx f2 = {p2_2.x, sec->floor_h, p2_2.y, 0.2f, 0.8f, 0.2f};
+      Vtx f0 = {p0_2.x, sec->floor_h, p0_2.y,          0.2f, 0.8f, 0.2f,
+                p0_2.x, p0_2.y,       sec->light_level};
+      Vtx f1 = {p1_2.x, sec->floor_h, p1_2.y,          0.2f, 0.8f, 0.2f,
+                p1_2.x, p1_2.y,       sec->light_level};
+      Vtx f2 = {p2_2.x, sec->floor_h, p2_2.y,          0.2f, 0.8f, 0.2f,
+                p2_2.x, p2_2.y,       sec->light_level};
 
-      Vtx c0 = {p0_2.x, sec->ceil_h, p0_2.y, 0.2f, 0.2f, 0.8f};
-      Vtx c1 = {p1_2.x, sec->ceil_h, p1_2.y, 0.2f, 0.2f, 0.8f};
-      Vtx c2 = {p2_2.x, sec->ceil_h, p2_2.y, 0.2f, 0.2f, 0.8f};
+      Vtx c0 = {p0_2.x, sec->ceil_h, p0_2.y,          0.2f, 0.2f, 0.8f,
+                p0_2.x, p0_2.y,      sec->light_level};
+      Vtx c1 = {p1_2.x, sec->ceil_h, p1_2.y,          0.2f, 0.2f, 0.8f,
+                p1_2.x, p1_2.y,      sec->light_level};
+      Vtx c2 = {p2_2.x, sec->ceil_h, p2_2.y,          0.2f, 0.2f, 0.8f,
+                p2_2.x, p2_2.y,      sec->light_level};
 
       push_tri(verts, &at, f0, f1, f2);
       push_tri(verts, &at, c2, c1, c0);
@@ -73,11 +81,19 @@ bool sector_mesh_build(SectorMesh *out, const Map *map) {
 
   GLsizei stride = (GLsizei)sizeof(Vtx);
   glEnableVertexAttribArray(0);
-  glad_glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, (void *)0);
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, (void *)0);
 
   glEnableVertexAttribArray(1);
   glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride,
                         (void *)(3 * sizeof(float)));
+
+  glEnableVertexAttribArray(2);
+  glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, stride,
+                        (void *)(6 * sizeof(float)));
+
+  glEnableVertexAttribArray(3);
+  glVertexAttribPointer(3, 1, GL_FLOAT, GL_FALSE, stride,
+                        (void *)(8 * sizeof(float)));
 
   glBindBuffer(GL_ARRAY_BUFFER, 0);
   glBindVertexArray(0);
@@ -96,7 +112,7 @@ void sector_mesh_destroy(SectorMesh *m) {
     glDeleteBuffers(1, &m->vbo);
   if (m->vao)
     glDeleteVertexArrays(1, &m->vao);
-  
+
   memset(m, 0, sizeof(*m));
 }
 
