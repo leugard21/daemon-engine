@@ -4,9 +4,11 @@
 
 #include "camera.h"
 #include "input.h"
-#include "map/map.h"
 #include "renderer.h"
 #include "time.h"
+
+#include "game/player.h"
+#include "map/map.h"
 
 static void log_sdl_error(const char *msg) {
   fprintf(stderr, "%s: %s\n", msg, SDL_GetError());
@@ -14,39 +16,14 @@ static void log_sdl_error(const char *msg) {
 
 static Camera g_cam;
 static Mat4 g_vp;
-
-static Vec3 yaw_forward(float yaw) {
-  float cy = cosf(yaw);
-  float sy = sinf(yaw);
-  return v3(sy, 0.0f, -cy);
-}
-
-static Vec3 yaw_right(float yaw) {
-  float cy = cosf(yaw);
-  float sy = sinf(yaw);
-  return v3(cy, 0.0f, sy);
-}
+static Map g_map;
+static Player g_player;
 
 static void game_update(double fixed_dt, const InputState *in) {
-  float dt = (float)fixed_dt;
+  player_update(&g_player, &g_map, in, (float)fixed_dt);
 
-  if (in->key_down[SDL_SCANCODE_LEFT])
-    g_cam.yaw += dt * 1.5f;
-  if (in->key_down[SDL_SCANCODE_RIGHT])
-    g_cam.yaw -= dt * 1.5f;
-
-  Vec3 f = yaw_forward(g_cam.yaw);
-  Vec3 r = yaw_right(g_cam.yaw);
-
-  float speed = 3.0f;
-  if (in->key_down[SDL_SCANCODE_W])
-    g_cam.pos = v3_add(g_cam.pos, v3_mul(f, speed * dt));
-  if (in->key_down[SDL_SCANCODE_S])
-    g_cam.pos = v3_sub(g_cam.pos, v3_mul(f, speed * dt));
-  if (in->key_down[SDL_SCANCODE_A])
-    g_cam.pos = v3_sub(g_cam.pos, v3_mul(r, speed * dt));
-  if (in->key_down[SDL_SCANCODE_D])
-    g_cam.pos = v3_add(g_cam.pos, v3_mul(r, speed * dt));
+  g_cam.pos = v3(g_player.pos.x, 1.6f, g_player.pos.y);
+  g_cam.yaw = g_player.yaw;
 }
 
 static void game_render(double frame_dt) {
@@ -102,29 +79,33 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  camera_init(&g_cam);
-  g_cam.pos = v3(2.0f, 1.0f, 10.0f);
-  g_cam.yaw = 0.0f;
-
-  Map map;
-  if (!map_build_test(&map)) {
-    printf("Failed to build test map\n");
-    return 1;
-  }
-  map_debug_print(&map);
-
-  if (!renderer_build_world_meshes(&map)) {
-    printf("Failed to build world mesh\n");
-    map_destroy(&map);
-    return 1;
-  }
-
   InputState in;
   input_init(&in, start_w, start_h);
-
   renderer_set_viewport(start_w, start_h);
 
   time_init();
+  camera_init(&g_cam);
+
+  if (!map_build_test(&g_map)) {
+    printf("Failed to build test map\n");
+    renderer_shutdown();
+    SDL_GL_DeleteContext(gl);
+    SDL_DestroyWindow(window);
+    SDL_Quit();
+    return 1;
+  }
+
+  if (!renderer_build_world_meshes(&g_map)) {
+    printf("Failed to build world meshes\n");
+    map_destroy(&g_map);
+    renderer_shutdown();
+    SDL_GL_DeleteContext(gl);
+    SDL_DestroyWindow(window);
+    SDL_Quit();
+    return 1;
+  }
+
+  player_init(&g_player);
 
   const double fixed_dt = 1.0 / 60.0;
   const double max_frame_dt = 0.25;
@@ -152,7 +133,9 @@ int main(int argc, char **argv) {
     if (frame_dt > max_frame_dt)
       frame_dt = max_frame_dt;
 
-    renderer_set_viewport(in.window_w, in.window_h);
+    if (in.resized) {
+      renderer_set_viewport(in.window_w, in.window_h);
+    }
 
     float aspect = (float)in.window_w / (float)in.window_h;
     g_vp = camera_view_proj(&g_cam, aspect);
@@ -163,15 +146,15 @@ int main(int argc, char **argv) {
       acc -= fixed_dt;
     }
 
-    renderer_begin_frame();
-    renderer_draw_world(&g_vp);
+    aspect = (float)in.window_w / (float)in.window_h;
+    g_vp = camera_view_proj(&g_cam, aspect);
 
     game_render(frame_dt);
     SDL_GL_SwapWindow(window);
   }
 
+  map_destroy(&g_map);
   renderer_shutdown();
-  map_destroy(&map);
   SDL_GL_DeleteContext(gl);
   SDL_DestroyWindow(window);
   SDL_Quit();

@@ -22,6 +22,8 @@ add_executable(daemon
   src/map/map.c
   src/geom/sector_mesh.c
   src/geom/wall_mesh.c
+  src/geom/geom2d.c
+  src/game/player.c 
   external/glad/src/glad.c
 )
 
